@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MesaproApplication {
 
 	public static void main(String[] args) {
+		System.out.println("MYSQL HOST: " + System.getenv("MYSQLHOST"));
 		SpringApplication.run(MesaproApplication.class, args);
 	}
 
