@@ -117,6 +117,21 @@ erDiagram
     CARDAPIO ||--o{ ITEM_CARDAPIO : inclui
     ITEM_CARDAPIO ||--o{ RECEITA : usa
     RECEITA }o--|| INSUMO : referencia
+     CARDAPIO {
+        int id
+        int restaurante_id
+        string nome
+        boolean ativo
+        datetime criado_em
+    }
+    ITEM_CARDAPIO {
+        int id
+        int cardapio_id
+        string nome
+        string descricao
+        float preco
+        boolean disponivel
+    }
     RECEITA {
         int id
         int item_cardapio_id
