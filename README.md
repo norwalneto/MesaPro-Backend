@@ -3,129 +3,219 @@ SaaS para restaurantes e bares.
 
 ```mermaid
 erDiagram
-    USUARIO ||--o{ PEDIDO : realiza
-    USUARIO }o--|| RESTAURANTE : pertence
-    RESTAURANTE ||--o{ USUARIO : possui
-    RESTAURANTE ||--o{ MESA : possui
-    RESTAURANTE ||--o{ CARDAPIO : possui
-    RESTAURANTE ||--o{ ESTOQUE : gerencia
-    RESTAURANTE }o--|| PLANO_ASSINATURA : utiliza
-
-    MESA ||--o{ PEDIDO : recebe
-    MESA ||--o{ RESERVA : pode_ter
-
-    CLIENTE ||--o{ PEDIDO : solicita
-    CLIENTE ||--o{ RESERVA : faz
-
-    PEDIDO ||--o{ ITEM_PEDIDO : contém
-    ITEM_PEDIDO }o--|| ITEM_CARDAPIO : refere_se
-
-    CARDAPIO ||--o{ ITEM_CARDAPIO : inclui
-
-    PEDIDO ||--|| PAGAMENTO : tem
-
-    ESTOQUE ||--o{ MOVIMENTACAO_ESTOQUE : possui
-
-    NOTIFICACAO }o--|| USUARIO : enviada_para
-
-    PLANO_ASSINATURA {
+    %% Multi-tenancy
+    TENANT ||--o{ RESTAURANTE : possui
+    TENANT {
         int id
         string nome
-        float preco
-        string recursos_incluidos
-        int limite_usuarios
-        int limite_mesas
+        string subdominio
     }
 
+    %% Entidades Principais
+    RESTAURANTE ||--o{ USUARIO_RESTAURANTE : vincula
+    USUARIO ||--o{ USUARIO_RESTAURANTE : participa
+    USUARIO_RESTAURANTE {
+        int usuario_id
+        int restaurante_id
+        datetime criado_em
+    }
     USUARIO {
         int id
         string nome
         string email
-        string senha
-        string papel
+        string senha_hash
+        string status
     }
 
-    RESTAURANTE {
+    %% Roles e Permissões
+    USUARIO }o--o{ ROLE : possui
+    ROLE ||--o{ PERMISSAO : define
+    ROLE {
         int id
         string nome
-        string cnpj
-        string endereco
-        string telefone
+    }
+    PERMISSAO {
+        int id
+        string recurso
+        string acao
     }
 
-    MESA {
+    %% POS / Comandas / Mesas
+    RESTAURANTE ||--o{ MESA : possui
+    MESA ||--o{ TURNO_MESA : gera
+    TURNO_MESA ||--o{ COMANDA : abre
+    TURNO_MESA {
         int id
-        int numero
+        int mesa_id
+        datetime aberto_em
+        datetime fechado_em
+        string status
+    }
+    COMANDA {
+        int id
+        int turno_mesa_id
+        enum tipo_pedido
+        datetime criado_em
         string status
     }
 
-    RESERVA {
-        int id
-        datetime data_hora
-        string status
-    }
-
+    %% Clientes (para Delivery)
+    RESTAURANTE ||--o{ CLIENTE : cadastra
+    CLIENTE ||--o{ ENTREGA : recebe
     CLIENTE {
         int id
+        int restaurante_id
         string nome
         string telefone
         string email
-        int fidelidade_pontos
-    }
-
-    CARDAPIO {
-        int id
-        string nome
-    }
-
-    ITEM_CARDAPIO {
-        int id
-        string nome
-        string descricao
-        float preco
-        string categoria
-        string imagem
-    }
-
-    PEDIDO {
-        int id
-        datetime data_hora
-        string status
-    }
-
-    ITEM_PEDIDO {
-        int id
-        int quantidade
+        string endereco
         string observacoes
     }
 
+    %% Pedidos e itens
+    COMANDA ||--o{ PEDIDO : agrupa
+    PEDIDO ||--o{ ITEM_PEDIDO : contém
+    PEDIDO ||--|| PAGAMENTO : tem
+    PEDIDO ||--|| ENTREGA : gera
+    PEDIDO {
+        int id
+        int comanda_id
+        datetime data_hora
+        enum status
+        enum tipo_pedido
+    }
+    ITEM_PEDIDO {
+        int id
+        int pedido_id
+        int item_cardapio_id
+        int quantidade
+        string observacoes
+        float preco_unitario
+    }
     PAGAMENTO {
         int id
+        int pedido_id
         float valor
-        string metodo_pagamento
+        enum metodo
         string status
     }
-
-    ESTOQUE {
+    ENTREGA {
         int id
-        string nome
-        float quantidade
-        string unidade
-        string categoria
+        int pedido_id
+        int cliente_id
+        string endereco_entrega
+        float taxa_entrega
+        string status_entrega
+        string tipo_entrega
+        string observacoes
+        datetime data_previsao
+        datetime data_entrega
     }
 
+    %% Cardápio e Estoque
+    RESTAURANTE ||--o{ CARDAPIO : tem
+    CARDAPIO ||--o{ ITEM_CARDAPIO : inclui
+    ITEM_CARDAPIO ||--o{ RECEITA : usa
+    RECEITA }o--|| INSUMO : referencia
+    RECEITA {
+        int id
+        int item_cardapio_id
+        int insumo_id
+        float quantidade
+    }
+    INSUMO {
+        int id
+        string nome
+        string unidade
+        float estoque_atual
+    }
+
+    %% Movimentações do Estoque
+    INSUMO ||--o{ MOVIMENTACAO_ESTOQUE : registra
     MOVIMENTACAO_ESTOQUE {
         int id
-        string tipo
+        int insumo_id
+        enum tipo
         float quantidade
         datetime data_hora
         string motivo
     }
 
-    NOTIFICACAO {
+    %% Nota Fiscal Eletrônica
+    PEDIDO ||--o{ NOTA_FISCAL : gera
+    NOTA_FISCAL ||--o{ NF_ITEM : contém
+    NOTA_FISCAL {
         int id
-        string mensagem
+        int pedido_id
+        string chave_acesso
+        datetime data_emissao
+        float valor_total
+        string status
+    }
+    NF_ITEM {
+        int id
+        int nota_fiscal_id
+        int item_pedido_id
+        float valor
+        string cfop
+        string ncm
+    }
+
+    %% Financeiro / Contábil
+    RESTAURANTE ||--o{ CONTA_BANCARIA : possui
+    CONTA_BANCARIA ||--o{ LANCAMENTO_FINANCEIRO : registra
+    CONTA_BANCARIA {
+        int id
+        int restaurante_id
+        string banco
+        string agencia
+        string conta
+    }
+    LANCAMENTO_FINANCEIRO {
+        int id
+        int conta_bancaria_id
+        datetime data
+        enum tipo
+        float valor
+        string descricao
+        int categoria_id
+        int pedido_id
+    }
+    CATEGORIA_FINANCEIRA {
+        int id
+        string nome
+        enum tipo
+    }
+
+    %% Assinaturas / SaaS
+    RESTAURANTE ||--|| ASSINATURA : tem
+    PLANO_ASSINATURA ||--o{ ASSINATURA : define
+    ASSINATURA {
+        int id
+        int restaurante_id
+        int plano_id
+        datetime inicio
+        datetime fim
+        enum status
+    }
+    PLANO_ASSINATURA {
+        int id
+        string nome
+        float preco_mensal
+        int limite_usuarios
+        int limite_mesas
+        string recursos
+    }
+
+    %% Auditoria
+    USUARIO ||--o{ AUDIT_LOG : gera
+    AUDIT_LOG {
+        int id
+        int usuario_id
+        string entidade
+        int entidade_id
+        string acao
         datetime data_hora
-        boolean lido
+        string detalhes
     }
 ```
