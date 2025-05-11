@@ -12,15 +12,18 @@ erDiagram
     }
 
     %% Entidades Principais
+    TENANT ||--o{ USUARIO : possui
     RESTAURANTE ||--o{ USUARIO_RESTAURANTE : vincula
     USUARIO ||--o{ USUARIO_RESTAURANTE : participa
     USUARIO_RESTAURANTE {
         int usuario_id
         int restaurante_id
+        int tenant_id
         datetime criado_em
     }
     USUARIO {
         int id
+        int tenant_id
         string nome
         string email
         string senha_hash
@@ -29,9 +32,11 @@ erDiagram
 
     %% Roles e Permissões
     USUARIO }o--o{ ROLE : possui
+    TENANT ||--o{ ROLE : define
     ROLE ||--o{ PERMISSAO : define
     ROLE {
         int id
+        int tenant_id
         string nome
     }
     PERMISSAO {
@@ -44,9 +49,15 @@ erDiagram
     RESTAURANTE ||--o{ MESA : possui
     MESA ||--o{ TURNO_MESA : gera
     TURNO_MESA ||--o{ COMANDA : abre
+    MESA {
+        int id
+        int restaurante_id
+        int tenant_id
+    }
     TURNO_MESA {
         int id
         int mesa_id
+        int tenant_id
         datetime aberto_em
         datetime fechado_em
         string status
@@ -54,6 +65,7 @@ erDiagram
     COMANDA {
         int id
         int turno_mesa_id
+        int tenant_id
         enum tipo_pedido
         datetime criado_em
         string status
@@ -65,6 +77,7 @@ erDiagram
     CLIENTE {
         int id
         int restaurante_id
+        int tenant_id
         string nome
         string telefone
         string email
@@ -80,6 +93,7 @@ erDiagram
     PEDIDO {
         int id
         int comanda_id
+        int tenant_id
         datetime data_hora
         enum status
         enum tipo_pedido
@@ -88,6 +102,7 @@ erDiagram
         int id
         int pedido_id
         int item_cardapio_id
+        int tenant_id
         int quantidade
         string observacoes
         float preco_unitario
@@ -95,6 +110,7 @@ erDiagram
     PAGAMENTO {
         int id
         int pedido_id
+        int tenant_id
         float valor
         enum metodo
         string status
@@ -103,6 +119,7 @@ erDiagram
         int id
         int pedido_id
         int cliente_id
+        int tenant_id
         string endereco_entrega
         float taxa_entrega
         string status_entrega
@@ -117,9 +134,10 @@ erDiagram
     CARDAPIO ||--o{ ITEM_CARDAPIO : inclui
     ITEM_CARDAPIO ||--o{ RECEITA : usa
     RECEITA }o--|| INSUMO : referencia
-     CARDAPIO {
+    CARDAPIO {
         int id
         int restaurante_id
+        int tenant_id
         string nome
         boolean ativo
         datetime criado_em
@@ -127,6 +145,7 @@ erDiagram
     ITEM_CARDAPIO {
         int id
         int cardapio_id
+        int tenant_id
         string nome
         string descricao
         float preco
@@ -136,10 +155,12 @@ erDiagram
         int id
         int item_cardapio_id
         int insumo_id
+        int tenant_id
         float quantidade
     }
     INSUMO {
         int id
+        int tenant_id
         string nome
         string unidade
         float estoque_atual
@@ -150,6 +171,7 @@ erDiagram
     MOVIMENTACAO_ESTOQUE {
         int id
         int insumo_id
+        int tenant_id
         enum tipo
         float quantidade
         datetime data_hora
@@ -162,6 +184,7 @@ erDiagram
     NOTA_FISCAL {
         int id
         int pedido_id
+        int tenant_id
         string chave_acesso
         datetime data_emissao
         float valor_total
@@ -171,6 +194,7 @@ erDiagram
         int id
         int nota_fiscal_id
         int item_pedido_id
+        int tenant_id
         float valor
         string cfop
         string ncm
@@ -182,6 +206,7 @@ erDiagram
     CONTA_BANCARIA {
         int id
         int restaurante_id
+        int tenant_id
         string banco
         string agencia
         string conta
@@ -189,6 +214,7 @@ erDiagram
     LANCAMENTO_FINANCEIRO {
         int id
         int conta_bancaria_id
+        int tenant_id
         datetime data
         enum tipo
         float valor
@@ -198,6 +224,7 @@ erDiagram
     }
     CATEGORIA_FINANCEIRA {
         int id
+        int tenant_id
         string nome
         enum tipo
     }
@@ -209,6 +236,7 @@ erDiagram
         int id
         int restaurante_id
         int plano_id
+        int tenant_id
         datetime inicio
         datetime fim
         enum status
@@ -227,10 +255,12 @@ erDiagram
     AUDIT_LOG {
         int id
         int usuario_id
+        int tenant_id
         string entidade
         int entidade_id
         string acao
         datetime data_hora
         string detalhes
     }
+
 ```
